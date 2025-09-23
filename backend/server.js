@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { sequelize, testConnection } = require('./db/config');
+require('./models/User');
 
 // Load environment variables
 dotenv.config();
@@ -47,7 +49,10 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Khisha API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  await testConnection();
+  await sequelize.sync();
+  console.log('🗄️  Database synchronized');
 });

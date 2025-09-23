@@ -1,17 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
+const User = require('../models/User');
 
 // GET /api/users/profile
-router.get('/profile', async (req, res) => {
+router.get('/profile', auth, async (req, res) => {
   try {
-    // TODO: Implement get user profile logic
     res.json({
       message: 'User profile retrieved',
-      user: {
-        id: 1,
-        email: 'user@example.com',
-        name: 'Test User'
-      }
+      user: req.user
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -19,14 +16,17 @@ router.get('/profile', async (req, res) => {
 });
 
 // PUT /api/users/profile
-router.put('/profile', async (req, res) => {
+router.put('/profile', auth, async (req, res) => {
   try {
-    const { name, email } = req.body;
-    
-    // TODO: Implement update user profile logic
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'name is required' });
+    }
+    req.user.name = name;
+    await req.user.save();
     res.json({
       message: 'Profile updated successfully',
-      user: { name, email }
+      user: req.user
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
