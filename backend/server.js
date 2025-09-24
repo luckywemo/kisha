@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { sequelize, testConnection } = require('./db/config');
-require('./models/User');
+const { AssessmentForm } = require('./models');
+require('./models');
 
 // Load environment variables
 dotenv.config();
@@ -54,5 +55,11 @@ app.listen(PORT, async () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   await testConnection();
   await sequelize.sync();
+  // Seed one sample assessment form if none exist
+  const count = await AssessmentForm.count();
+  if (count === 0) {
+    await AssessmentForm.create({ title: 'General Wellness Check', description: 'Basic 3-question wellness check.' });
+    console.log('🌱 Seeded sample assessment form');
+  }
   console.log('🗄️  Database synchronized');
 });
