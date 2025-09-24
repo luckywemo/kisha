@@ -8,6 +8,7 @@ export default function Chat() {
   const [activeId, setActiveId] = useState(null);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     api.listConversations().then((res) => setConversations(res.conversations || [])).catch(() => setConversations([]));
@@ -26,12 +27,22 @@ export default function Chat() {
     if (!activeId || !message.trim()) return;
     setSending(true);
     try {
-      await api.sendMessage({ conversationId: activeId, message });
+      const res = await api.sendMessage({ conversationId: activeId, message });
+      setMessages([...messages, res.messageData]);
       setMessage('');
     } finally {
       setSending(false);
     }
   }
+
+  useEffect(() => {
+    if (!activeId) return;
+    let cancelled = false;
+    api.getMessages({ conversationId: activeId }).then((res) => {
+      if (!cancelled) setMessages(res.messages || []);
+    }).catch(() => setMessages([]));
+    return () => { cancelled = true; };
+  }, [activeId]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16, maxWidth: 960, margin: '20px auto' }}>
@@ -56,6 +67,14 @@ export default function Chat() {
           <div>Select a conversation</div>
         ) : (
           <div>
+            <div style={{ minHeight: 200, maxHeight: 400, overflowY: 'auto', border: '1px solid #eee', padding: 8 }}>
+              {messages.length === 0 ? <div style={{ color: '#666' }}>No messages yet</div> : messages.map((m) => (
+                <div key={m.id} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>{new Date(m.createdAt).toLocaleTimeString()}</div>
+                  <div><strong>{m.type === 'system' ? 'System' : 'You'}:</strong> {m.message}</div>
+                </div>
+              ))}
+            </div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
               <input placeholder="Type a message" value={message} onChange={(e) => setMessage(e.target.value)} />
               <button onClick={send} disabled={sending || !message.trim()}>{sending ? 'Sending...' : 'Send'}</button>

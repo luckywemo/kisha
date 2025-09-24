@@ -42,4 +42,17 @@ router.post('/messages', auth, async (req, res) => {
   }
 });
 
+// GET /api/chat/conversations/:id/messages
+router.get('/conversations/:id/messages', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const conv = await Conversation.findOne({ where: { id, userId: req.user.id } });
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+    const messages = await Message.findAll({ where: { conversationId: id }, order: [['createdAt', 'ASC']] });
+    res.json({ message: 'Messages retrieved', messages });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

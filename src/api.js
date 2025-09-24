@@ -45,6 +45,9 @@ export const api = {
   async sendMessage({ conversationId, message, type = 'user' }) {
     return request('/chat/messages', { method: 'POST', body: { conversationId, message, type } });
   },
+  async getMessages({ conversationId }) {
+    return request(`/chat/conversations/${conversationId}/messages`);
+  },
   // Assessment
   async listForms() {
     return request('/assessment/forms');
