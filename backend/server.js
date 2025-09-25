@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { sequelize, testConnection } = require('./db/config');
 const { AssessmentForm } = require('./models');
@@ -12,7 +14,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',');
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(helmet());
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -58,7 +63,15 @@ app.listen(PORT, async () => {
   // Seed one sample assessment form if none exist
   const count = await AssessmentForm.count();
   if (count === 0) {
-    await AssessmentForm.create({ title: 'General Wellness Check', description: 'Basic 3-question wellness check.' });
+    await AssessmentForm.create({
+      title: 'General Wellness Check',
+      description: 'Basic 3-question wellness check.',
+      questions: [
+        { id: 'q1', type: 'scale', label: 'Energy level today', min: 1, max: 5 },
+        { id: 'q2', type: 'scale', label: 'Mood level today', min: 1, max: 5 },
+        { id: 'q3', type: 'text', label: 'Any health concern?' }
+      ]
+    });
     console.log('🌱 Seeded sample assessment form');
   }
   console.log('🗄️  Database synchronized');

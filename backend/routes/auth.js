@@ -14,6 +14,15 @@ router.post('/register', async (req, res) => {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'name, email and password are required' });
     }
+    if (typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'valid email is required' });
+    }
+    if (typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'name must be at least 2 characters' });
+    }
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'password must be at least 6 characters' });
+    }
 
     const existing = await User.findOne({ where: { email } });
     if (existing) {
@@ -42,6 +51,12 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'email and password are required' });
+    }
+    if (typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'valid email is required' });
+    }
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'password must be at least 6 characters' });
     }
 
     const user = await User.findOne({ where: { email } });

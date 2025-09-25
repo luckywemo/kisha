@@ -45,11 +45,14 @@ export default function Assessment() {
           <div>
             <p><strong>Selected:</strong> {selected.title || `Form ${selected.id}`}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Placeholder for dynamic questions; use dummy 3 questions for now */}
-              {[1,2,3].map((q) => (
-                <div key={q}>
-                  <label>Question {q}</label>
-                  <input value={answers[q] || ''} onChange={(e) => setAnswers({ ...answers, [q]: e.target.value })} />
+              {(selected.questions || []).map((q) => (
+                <div key={q.id}>
+                  <label>{q.label}</label>
+                  {q.type === 'scale' ? (
+                    <input type="number" min={q.min} max={q.max} value={answers[q.id] ?? ''} onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })} />
+                  ) : (
+                    <input value={answers[q.id] ?? ''} onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })} />
+                  )}
                 </div>
               ))}
             </div>
@@ -58,7 +61,7 @@ export default function Assessment() {
               <div style={{ marginTop: 12 }}>
                 <h4 style={{ marginBottom: 6 }}>Result</h4>
                 <div>Score: {result.score}</div>
-                <div>Submitted: {new Date(result.timestamp).toLocaleString()}</div>
+                <div>Submitted: {new Date(result.createdAt).toLocaleString()}</div>
               </div>
             )}
           </div>
