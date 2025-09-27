@@ -6,6 +6,10 @@ import Home from './pages/Home'
 import Chat from './pages/Chat'
 import Assessment from './pages/Assessment'
 import Profile from './pages/Profile'
+import AssessmentAnalytics from './components/AssessmentAnalytics'
+import HealthGoals from './components/HealthGoals'
+import SymptomTracker from './components/SymptomTracker'
+import MedicationTracker from './components/MedicationTracker'
 
 function App() {
   const [mode, setMode] = useState('login');
@@ -148,6 +152,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/assessment" element={<Assessment />} />
+            <Route path="/analytics" element={<AssessmentAnalytics />} />
+            <Route path="/goals" element={<HealthGoals />} />
+            <Route path="/symptoms" element={<SymptomTracker />} />
+            <Route path="/medications" element={<MedicationTracker />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -164,6 +172,10 @@ function AppHeader({ user, onLogout }) {
     { path: '/', label: 'Dashboard', icon: '🏠' },
     { path: '/chat', label: 'Health Chat', icon: '💬' },
     { path: '/assessment', label: 'Assessment', icon: '📋' },
+    { path: '/analytics', label: 'Analytics', icon: '📊' },
+    { path: '/goals', label: 'Goals', icon: '🎯' },
+    { path: '/symptoms', label: 'Symptoms', icon: '🩺' },
+    { path: '/medications', label: 'Medications', icon: '💊' },
     { path: '/profile', label: 'Profile', icon: '👤' }
   ];
 

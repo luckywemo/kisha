@@ -119,6 +119,34 @@ export default function Home() {
       color: 'success'
     },
     {
+      title: 'View Analytics',
+      description: 'Analyze your health data and trends',
+      icon: '📊',
+      link: '/analytics',
+      color: 'primary'
+    },
+    {
+      title: 'Set Health Goals',
+      description: 'Create and track your wellness objectives',
+      icon: '🎯',
+      link: '/goals',
+      color: 'warning'
+    },
+    {
+      title: 'Track Symptoms',
+      description: 'Monitor and log your health symptoms',
+      icon: '🩺',
+      link: '/symptoms',
+      color: 'error'
+    },
+    {
+      title: 'Medication Tracker',
+      description: 'Manage medications and supplements',
+      icon: '💊',
+      link: '/medications',
+      color: 'primary'
+    },
+    {
       title: 'View Profile',
       description: 'Manage your account settings and preferences',
       icon: '👤',
