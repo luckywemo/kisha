@@ -168,6 +168,13 @@ export default function Home() {
       color: 'warning'
     },
     {
+      title: 'Health Reports',
+      description: 'Generate comprehensive health reports',
+      icon: '📊',
+      link: '/reports',
+      color: 'primary'
+    },
+    {
       title: 'Export Data',
       description: 'Download your health data',
       icon: '📤',
