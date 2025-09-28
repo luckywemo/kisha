@@ -119,6 +119,13 @@ export default function Home() {
       color: 'success'
     },
     {
+      title: 'Health Journal',
+      description: 'Track your daily wellness and mood',
+      icon: '📝',
+      link: '/journal',
+      color: 'primary'
+    },
+    {
       title: 'View Analytics',
       description: 'Analyze your health data and trends',
       icon: '📊',
@@ -144,6 +151,27 @@ export default function Home() {
       description: 'Manage medications and supplements',
       icon: '💊',
       link: '/medications',
+      color: 'primary'
+    },
+    {
+      title: 'Wellness Tips',
+      description: 'Get personalized health recommendations',
+      icon: '💡',
+      link: '/tips',
+      color: 'success'
+    },
+    {
+      title: 'Health Challenges',
+      description: 'Join challenges and earn achievements',
+      icon: '🏆',
+      link: '/challenges',
+      color: 'warning'
+    },
+    {
+      title: 'Export Data',
+      description: 'Download your health data',
+      icon: '📤',
+      link: '/export',
       color: 'primary'
     },
     {

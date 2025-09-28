@@ -10,6 +10,10 @@ import AssessmentAnalytics from './components/AssessmentAnalytics'
 import HealthGoals from './components/HealthGoals'
 import SymptomTracker from './components/SymptomTracker'
 import MedicationTracker from './components/MedicationTracker'
+import DataExport from './components/DataExport'
+import HealthJournal from './components/HealthJournal'
+import WellnessTips from './components/WellnessTips'
+import HealthChallenges from './components/HealthChallenges'
 
 function App() {
   const [mode, setMode] = useState('login');
@@ -148,17 +152,21 @@ function App() {
       <div className="app-container">
         <AppHeader user={user} onLogout={logout} />
         <main className="app-main">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/assessment" element={<Assessment />} />
-            <Route path="/analytics" element={<AssessmentAnalytics />} />
-            <Route path="/goals" element={<HealthGoals />} />
-            <Route path="/symptoms" element={<SymptomTracker />} />
-            <Route path="/medications" element={<MedicationTracker />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/assessment" element={<Assessment />} />
+          <Route path="/analytics" element={<AssessmentAnalytics />} />
+          <Route path="/goals" element={<HealthGoals />} />
+          <Route path="/symptoms" element={<SymptomTracker />} />
+          <Route path="/medications" element={<MedicationTracker />} />
+          <Route path="/journal" element={<HealthJournal />} />
+          <Route path="/tips" element={<WellnessTips />} />
+          <Route path="/challenges" element={<HealthChallenges />} />
+          <Route path="/export" element={<DataExport />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
         </main>
       </div>
     </BrowserRouter>
@@ -176,6 +184,10 @@ function AppHeader({ user, onLogout }) {
     { path: '/goals', label: 'Goals', icon: '🎯' },
     { path: '/symptoms', label: 'Symptoms', icon: '🩺' },
     { path: '/medications', label: 'Medications', icon: '💊' },
+    { path: '/journal', label: 'Journal', icon: '📝' },
+    { path: '/tips', label: 'Tips', icon: '💡' },
+    { path: '/challenges', label: 'Challenges', icon: '🏆' },
+    { path: '/export', label: 'Export', icon: '📤' },
     { path: '/profile', label: 'Profile', icon: '👤' }
   ];
 
