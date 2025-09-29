@@ -35,12 +35,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// API Routes (to be implemented)
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/user'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/assessment', require('./routes/assessment'));
 app.use('/api/medications', require('./routes/medications'));
+app.use('/api/goals', require('./routes/goals'));
+app.use('/api/symptoms', require('./routes/symptoms'));
+app.use('/api/journal', require('./routes/journal'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

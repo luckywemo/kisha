@@ -28,10 +28,11 @@ router.post('/', auth, async (req, res) => {
       name,
       dosage,
       frequency,
-      instructions,
-      startDate,
-      endDate,
+      instructions: instructions || '',
+      startDate: startDate || new Date().toISOString().split('T')[0],
+      endDate: endDate || null,
       reminderTimes: JSON.stringify(reminderTimes || []),
+      isActive: true,
       userId: req.user.id
     });
 
@@ -45,24 +46,18 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const medication = await Medication.findOne({ where: { id, userId: req.user.id } });
+    const updates = req.body;
     
+    const medication = await Medication.findOne({ where: { id, userId: req.user.id } });
     if (!medication) {
       return res.status(404).json({ error: 'Medication not found' });
     }
 
-    const { name, dosage, frequency, instructions, startDate, endDate, reminderTimes } = req.body;
-    
-    await medication.update({
-      name: name || medication.name,
-      dosage: dosage || medication.dosage,
-      frequency: frequency || medication.frequency,
-      instructions: instructions || medication.instructions,
-      startDate: startDate || medication.startDate,
-      endDate: endDate || medication.endDate,
-      reminderTimes: reminderTimes ? JSON.stringify(reminderTimes) : medication.reminderTimes
-    });
+    if (updates.reminderTimes) {
+      updates.reminderTimes = JSON.stringify(updates.reminderTimes);
+    }
 
+    await medication.update(updates);
     res.json({ message: 'Medication updated successfully', medication });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -73,8 +68,8 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const medication = await Medication.findOne({ where: { id, userId: req.user.id } });
     
+    const medication = await Medication.findOne({ where: { id, userId: req.user.id } });
     if (!medication) {
       return res.status(404).json({ error: 'Medication not found' });
     }
@@ -90,20 +85,21 @@ router.delete('/:id', auth, async (req, res) => {
 router.post('/:id/taken', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { takenAt, notes } = req.body;
+    const { notes } = req.body;
     
     const medication = await Medication.findOne({ where: { id, userId: req.user.id } });
     if (!medication) {
       return res.status(404).json({ error: 'Medication not found' });
     }
 
-    // In a real app, you'd store this in a separate MedicationLog table
-    // For now, we'll just return success
-    res.json({ 
-      message: 'Medication taken recorded', 
-      takenAt: takenAt || new Date().toISOString(),
+    // In a real app, you'd create a MedicationLog entry here
+    const logEntry = {
+      medicationId: id,
+      takenAt: new Date().toISOString(),
       notes: notes || ''
-    });
+    };
+
+    res.status(201).json({ message: 'Medication marked as taken', logEntry });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

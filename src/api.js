@@ -57,6 +57,63 @@ export const api = {
   },
   async getAssessmentResults({ id }) {
     return request(`/assessment/results/${id}`);
+  },
+  // Goals
+  async listGoals() {
+    return request('/goals');
+  },
+  async createGoal({ title, description, category, target, deadline, priority }) {
+    return request('/goals', { method: 'POST', body: { title, description, category, target, deadline, priority } });
+  },
+  async updateGoal({ id, updates }) {
+    return request(`/goals/${id}`, { method: 'PUT', body: updates });
+  },
+  async deleteGoal({ id }) {
+    return request(`/goals/${id}`, { method: 'DELETE' });
+  },
+  // Symptoms
+  async listSymptoms({ category } = {}) {
+    const params = category ? `?category=${category}` : '';
+    return request(`/symptoms${params}`);
+  },
+  async createSymptom({ name, severity, location, description, triggers, duration, notes, category }) {
+    return request('/symptoms', { method: 'POST', body: { name, severity, location, description, triggers, duration, notes, category } });
+  },
+  async updateSymptom({ id, updates }) {
+    return request(`/symptoms/${id}`, { method: 'PUT', body: updates });
+  },
+  async deleteSymptom({ id }) {
+    return request(`/symptoms/${id}`, { method: 'DELETE' });
+  },
+  // Medications
+  async listMedications() {
+    return request('/medications');
+  },
+  async createMedication({ name, dosage, frequency, instructions, startDate, endDate, reminderTimes }) {
+    return request('/medications', { method: 'POST', body: { name, dosage, frequency, instructions, startDate, endDate, reminderTimes } });
+  },
+  async updateMedication({ id, updates }) {
+    return request(`/medications/${id}`, { method: 'PUT', body: updates });
+  },
+  async deleteMedication({ id }) {
+    return request(`/medications/${id}`, { method: 'DELETE' });
+  },
+  async markMedicationTaken({ id, notes }) {
+    return request(`/medications/${id}/taken`, { method: 'POST', body: { notes } });
+  },
+  // Journal
+  async listJournalEntries({ date } = {}) {
+    const params = date ? `?date=${date}` : '';
+    return request(`/journal${params}`);
+  },
+  async createJournalEntry({ date, mood, energy, sleep, exercise, water, stress, notes, symptoms, activities, meals }) {
+    return request('/journal', { method: 'POST', body: { date, mood, energy, sleep, exercise, water, stress, notes, symptoms, activities, meals } });
+  },
+  async updateJournalEntry({ id, updates }) {
+    return request(`/journal/${id}`, { method: 'PUT', body: updates });
+  },
+  async deleteJournalEntry({ id }) {
+    return request(`/journal/${id}`, { method: 'DELETE' });
   }
 };
 

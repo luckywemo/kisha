@@ -5,6 +5,9 @@ const Message = require('./Message');
 const AssessmentForm = require('./AssessmentForm');
 const AssessmentSubmission = require('./AssessmentSubmission');
 const Medication = require('./Medication');
+const HealthGoal = require('./HealthGoal');
+const Symptom = require('./Symptom');
+const JournalEntry = require('./JournalEntry');
 
 // Associations
 User.hasMany(Conversation, { foreignKey: 'userId' });
@@ -22,6 +25,15 @@ AssessmentSubmission.belongsTo(AssessmentForm, { foreignKey: 'formId' });
 User.hasMany(Medication, { foreignKey: 'userId' });
 Medication.belongsTo(User, { foreignKey: 'userId' });
 
+User.hasMany(HealthGoal, { foreignKey: 'userId' });
+HealthGoal.belongsTo(User, { foreignKey: 'userId' });
+
+User.hasMany(Symptom, { foreignKey: 'userId' });
+Symptom.belongsTo(User, { foreignKey: 'userId' });
+
+User.hasMany(JournalEntry, { foreignKey: 'userId' });
+JournalEntry.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   sequelize,
   User,
@@ -30,6 +42,9 @@ module.exports = {
   AssessmentForm,
   AssessmentSubmission,
   Medication,
+  HealthGoal,
+  Symptom,
+  JournalEntry,
 };
 
 
