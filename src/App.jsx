@@ -15,6 +15,7 @@ import HealthJournal from './components/HealthJournal'
 import WellnessTips from './components/WellnessTips'
 import HealthChallenges from './components/HealthChallenges'
 import HealthReports from './components/HealthReports'
+import ReminderSystem from './components/ReminderSystem'
 
 function App() {
   const [mode, setMode] = useState('login');
@@ -165,6 +166,7 @@ function App() {
           <Route path="/tips" element={<WellnessTips />} />
           <Route path="/challenges" element={<HealthChallenges />} />
           <Route path="/reports" element={<HealthReports />} />
+          <Route path="/reminders" element={<ReminderSystem />} />
           <Route path="/export" element={<DataExport />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -190,6 +192,7 @@ function AppHeader({ user, onLogout }) {
     { path: '/tips', label: 'Tips', icon: '💡' },
     { path: '/challenges', label: 'Challenges', icon: '🏆' },
     { path: '/reports', label: 'Reports', icon: '📊' },
+    { path: '/reminders', label: 'Reminders', icon: '⏰' },
     { path: '/export', label: 'Export', icon: '📤' },
     { path: '/profile', label: 'Profile', icon: '👤' }
   ];
