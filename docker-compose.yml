@@ -4,12 +4,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
+      - DB_STORAGE=/data/khisha.db
       - JWT_SECRET=${JWT_SECRET:-change-me}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
     ports:
       - "5000:5000"
     volumes:
-      - backend_data:/app/khisha.db
+      - backend_data:/data
   frontend:
     build: .
     environment:
@@ -21,6 +22,7 @@ services:
 
 volumes:
   backend_data:
+
 
 
 

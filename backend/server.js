@@ -3,12 +3,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
-const { sequelize, testConnection } = require('./db/config');
-const { AssessmentForm } = require('./models');
-require('./models');
 
 // Load environment variables
 dotenv.config();
+
+// Import database and models after dotenv
+const { sequelize, testConnection } = require('./db/config');
+const { AssessmentForm } = require('./models');
+require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;

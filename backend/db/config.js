@@ -1,10 +1,13 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+const sqliteStoragePath = process.env.DB_STORAGE || './khisha.db';
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './khisha.db',
-  logging: console.log, // Set to false in production
+  storage: sqliteStoragePath,
+  logging: isProduction ? false : console.log,
 });
 
 // Test the connection
