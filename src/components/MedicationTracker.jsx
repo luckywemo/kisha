@@ -22,8 +22,12 @@ export default function MedicationTracker() {
   async function loadMedications() {
     try {
       setLoading(true);
-      // In a real app, this would call the API
-      // For now, we'll use mock data
+      const response = await api.listMedications();
+      setMedications(response.medications || []);
+    } catch (error) {
+      console.error('Error loading medications:', error);
+      setMedications([]);
+      // Fallback to mock data for development
       const mockMedications = [
         {
           id: 1,
@@ -51,9 +55,6 @@ export default function MedicationTracker() {
         }
       ];
       setMedications(mockMedications);
-    } catch (error) {
-      console.error('Error loading medications:', error);
-      setMedications([]);
     } finally {
       setLoading(false);
     }
@@ -63,14 +64,9 @@ export default function MedicationTracker() {
     if (!newMedication.name.trim() || !newMedication.dosage.trim() || !newMedication.frequency.trim()) return;
 
     try {
-      const medication = {
-        id: Date.now(),
-        ...newMedication,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-
-      setMedications([medication, ...medications]);
+      setLoading(true);
+      const response = await api.createMedication(newMedication);
+      setMedications([response.medication, ...medications]);
       setNewMedication({
         name: '',
         dosage: '',
@@ -84,25 +80,44 @@ export default function MedicationTracker() {
     } catch (error) {
       console.error('Error adding medication:', error);
       alert('Failed to add medication. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
   async function updateMedication(id, updates) {
-    setMedications(medications.map(med => 
-      med.id === id ? { ...med, ...updates } : med
-    ));
+    try {
+      const response = await api.updateMedication({ id, updates });
+      setMedications(medications.map(med => 
+        med.id === id ? response.medication : med
+      ));
+    } catch (error) {
+      console.error('Error updating medication:', error);
+      alert('Failed to update medication. Please try again.');
+    }
   }
 
   async function deleteMedication(id) {
-    if (window.confirm('Are you sure you want to delete this medication?')) {
+    if (!window.confirm('Are you sure you want to delete this medication?')) return;
+    
+    try {
+      await api.deleteMedication({ id });
       setMedications(medications.filter(med => med.id !== id));
+    } catch (error) {
+      console.error('Error deleting medication:', error);
+      alert('Failed to delete medication. Please try again.');
     }
   }
 
   async function markTaken(id) {
-    const takenAt = new Date().toISOString();
-    // In a real app, this would call the API to log the medication taken
-    alert(`Medication marked as taken at ${new Date(takenAt).toLocaleString()}`);
+    try {
+      const takenAt = new Date().toISOString();
+      await api.markMedicationTaken({ id, notes: `Taken at ${takenAt}` });
+      alert(`Medication marked as taken at ${new Date(takenAt).toLocaleString()}`);
+    } catch (error) {
+      console.error('Error marking medication as taken:', error);
+      alert('Failed to mark medication as taken. Please try again.');
+    }
   }
 
   function addReminderTime() {

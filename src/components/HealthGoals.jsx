@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function HealthGoals() {
   const [goals, setGoals] = useState([]);
@@ -11,103 +12,126 @@ export default function HealthGoals() {
     priority: 'medium'
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadGoals();
   }, []);
 
-  function loadGoals() {
-    // In a real app, this would load from the backend
-    const mockGoals = [
-      {
-        id: 1,
-        title: 'Walk 10,000 steps daily',
-        description: 'Increase daily physical activity by walking more',
-        category: 'exercise',
-        target: '10,000 steps',
-        deadline: '2024-02-15',
-        priority: 'high',
-        progress: 75,
-        status: 'active',
-        createdAt: '2024-01-15'
-      },
-      {
-        id: 2,
-        title: 'Drink 8 glasses of water',
-        description: 'Stay properly hydrated throughout the day',
-        category: 'nutrition',
-        target: '8 glasses',
-        deadline: '2024-02-20',
-        priority: 'medium',
-        progress: 60,
-        status: 'active',
-        createdAt: '2024-01-20'
-      },
-      {
-        id: 3,
-        title: 'Sleep 8 hours nightly',
-        description: 'Improve sleep quality and duration',
-        category: 'sleep',
-        target: '8 hours',
-        deadline: '2024-02-10',
-        priority: 'high',
-        progress: 90,
-        status: 'active',
-        createdAt: '2024-01-10'
-      },
-      {
-        id: 4,
-        title: 'Meditate 10 minutes daily',
-        description: 'Practice mindfulness and stress reduction',
-        category: 'mental-health',
-        target: '10 minutes',
-        deadline: '2024-01-30',
-        priority: 'low',
-        progress: 100,
-        status: 'completed',
-        createdAt: '2024-01-01'
-      }
-    ];
-    setGoals(mockGoals);
+  async function loadGoals() {
+    try {
+      setLoading(true);
+      const response = await api.listGoals();
+      setGoals(response.goals || []);
+    } catch (err) {
+      console.error('Error loading goals:', err);
+      setError('Failed to load goals');
+      // Fallback to mock data for development
+      const mockGoals = [
+        {
+          id: 1,
+          title: 'Walk 10,000 steps daily',
+          description: 'Increase daily physical activity by walking more',
+          category: 'exercise',
+          target: '10,000 steps',
+          deadline: '2024-02-15',
+          priority: 'high',
+          progress: 75,
+          status: 'active',
+          createdAt: '2024-01-15'
+        },
+        {
+          id: 2,
+          title: 'Drink 8 glasses of water',
+          description: 'Stay properly hydrated throughout the day',
+          category: 'nutrition',
+          target: '8 glasses',
+          deadline: '2024-02-20',
+          priority: 'medium',
+          progress: 60,
+          status: 'active',
+          createdAt: '2024-01-20'
+        },
+        {
+          id: 3,
+          title: 'Sleep 8 hours nightly',
+          description: 'Improve sleep quality and duration',
+          category: 'sleep',
+          target: '8 hours',
+          deadline: '2024-02-10',
+          priority: 'high',
+          progress: 90,
+          status: 'active',
+          createdAt: '2024-01-10'
+        },
+        {
+          id: 4,
+          title: 'Meditate 10 minutes daily',
+          description: 'Practice mindfulness and stress reduction',
+          category: 'mental-health',
+          target: '10 minutes',
+          deadline: '2024-01-30',
+          priority: 'low',
+          progress: 100,
+          status: 'completed',
+          createdAt: '2024-01-01'
+        }
+      ];
+      setGoals(mockGoals);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function addGoal() {
+  async function addGoal() {
     if (!newGoal.title.trim() || !newGoal.target.trim()) return;
 
-    const goal = {
-      id: Date.now(),
-      ...newGoal,
-      progress: 0,
-      status: 'active',
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    setGoals([goal, ...goals]);
-    setNewGoal({
-      title: '',
-      description: '',
-      category: 'general',
-      target: '',
-      deadline: '',
-      priority: 'medium'
-    });
-    setShowAddForm(false);
+    try {
+      setLoading(true);
+      const response = await api.createGoal(newGoal);
+      setGoals([response.goal, ...goals]);
+      setNewGoal({
+        title: '',
+        description: '',
+        category: 'general',
+        target: '',
+        deadline: '',
+        priority: 'medium'
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error creating goal:', err);
+      setError('Failed to create goal');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function updateProgress(goalId, newProgress) {
-    setGoals(goals.map(goal => 
-      goal.id === goalId 
-        ? { 
-            ...goal, 
-            progress: Math.min(100, Math.max(0, newProgress)),
-            status: newProgress >= 100 ? 'completed' : 'active'
-          }
-        : goal
-    ));
+  async function updateProgress(goalId, newProgress) {
+    try {
+      const progress = Math.min(100, Math.max(0, newProgress));
+      const response = await api.updateGoal({ id: goalId, updates: { progress } });
+      
+      setGoals(goals.map(goal => 
+        goal.id === goalId ? response.goal : goal
+      ));
+    } catch (err) {
+      console.error('Error updating goal:', err);
+      setError('Failed to update goal progress');
+    }
   }
 
-  function deleteGoal(goalId) {
-    setGoals(goals.filter(goal => goal.id !== goalId));
+  async function deleteGoal(goalId) {
+    if (!window.confirm('Are you sure you want to delete this goal?')) return;
+    
+    try {
+      await api.deleteGoal({ id: goalId });
+      setGoals(goals.filter(goal => goal.id !== goalId));
+    } catch (err) {
+      console.error('Error deleting goal:', err);
+      setError('Failed to delete goal');
+    }
   }
 
   function getCategoryIcon(category) {
@@ -149,6 +173,27 @@ export default function HealthGoals() {
 
   return (
     <div>
+      {error && (
+        <div className="card mb-6" style={{ backgroundColor: 'var(--error)', color: 'white' }}>
+          <div className="card-header">
+            <h3 className="card-title">Error</h3>
+          </div>
+          <p>{error}</p>
+          <button onClick={() => setError('')} className="secondary">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="card mb-6">
+          <div className="flex items-center justify-center" style={{ minHeight: '100px' }}>
+            <div className="loading"></div>
+            <span style={{ marginLeft: '1rem' }}>Loading goals...</span>
+          </div>
+        </div>
+      )}
+
       {/* Goals Overview */}
       <div className="dashboard-grid mb-6">
         <div className="dashboard-card">

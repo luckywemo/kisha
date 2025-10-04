@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function SymptomTracker() {
   const [symptoms, setSymptoms] = useState([]);
@@ -9,86 +10,110 @@ export default function SymptomTracker() {
     description: '',
     triggers: '',
     duration: '',
-    notes: ''
+    notes: '',
+    category: 'other'
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadSymptoms();
   }, []);
 
-  function loadSymptoms() {
-    // In a real app, this would load from the backend
-    const mockSymptoms = [
-      {
-        id: 1,
-        name: 'Headache',
-        severity: 7,
-        location: 'Frontal',
-        description: 'Throbbing pain in forehead',
-        triggers: 'Stress, lack of sleep',
-        duration: '2 hours',
-        notes: 'Started after long work day',
-        category: 'pain',
-        createdAt: new Date().toISOString(),
-        frequency: 'daily'
-      },
-      {
-        id: 2,
-        name: 'Fatigue',
-        severity: 6,
-        location: 'General',
-        description: 'Feeling tired and low energy',
-        triggers: 'Poor sleep quality',
-        duration: 'All day',
-        notes: 'Difficulty concentrating',
-        category: 'energy',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        frequency: 'daily'
-      },
-      {
-        id: 3,
-        name: 'Joint Stiffness',
-        severity: 4,
-        location: 'Knees',
-        description: 'Stiffness in knee joints',
-        triggers: 'Cold weather, inactivity',
-        duration: '30 minutes',
-        notes: 'Worse in the morning',
-        category: 'pain',
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        frequency: 'weekly'
-      }
-    ];
-    setSymptoms(mockSymptoms);
+  async function loadSymptoms() {
+    try {
+      setLoading(true);
+      const response = await api.listSymptoms();
+      setSymptoms(response.symptoms || []);
+    } catch (err) {
+      console.error('Error loading symptoms:', err);
+      setError('Failed to load symptoms');
+      // Fallback to mock data for development
+      const mockSymptoms = [
+        {
+          id: 1,
+          name: 'Headache',
+          severity: 7,
+          location: 'Frontal',
+          description: 'Throbbing pain in forehead',
+          triggers: 'Stress, lack of sleep',
+          duration: '2 hours',
+          notes: 'Started after long work day',
+          category: 'pain',
+          createdAt: new Date().toISOString(),
+          frequency: 'daily'
+        },
+        {
+          id: 2,
+          name: 'Fatigue',
+          severity: 6,
+          location: 'General',
+          description: 'Feeling tired and low energy',
+          triggers: 'Poor sleep quality',
+          duration: 'All day',
+          notes: 'Difficulty concentrating',
+          category: 'energy',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          frequency: 'daily'
+        },
+        {
+          id: 3,
+          name: 'Joint Stiffness',
+          severity: 4,
+          location: 'Knees',
+          description: 'Stiffness in knee joints',
+          triggers: 'Cold weather, inactivity',
+          duration: '30 minutes',
+          notes: 'Worse in the morning',
+          category: 'pain',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          frequency: 'weekly'
+        }
+      ];
+      setSymptoms(mockSymptoms);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function addSymptom() {
+  async function addSymptom() {
     if (!newSymptom.name.trim()) return;
 
-    const symptom = {
-      id: Date.now(),
-      ...newSymptom,
-      createdAt: new Date().toISOString(),
-      frequency: 'once' // This would be determined by tracking over time
-    };
-
-    setSymptoms([symptom, ...symptoms]);
-    setNewSymptom({
-      name: '',
-      severity: 5,
-      location: '',
-      description: '',
-      triggers: '',
-      duration: '',
-      notes: ''
-    });
-    setShowAddForm(false);
+    try {
+      setLoading(true);
+      const response = await api.createSymptom(newSymptom);
+      setSymptoms([response.symptom, ...symptoms]);
+      setNewSymptom({
+        name: '',
+        severity: 5,
+        location: '',
+        description: '',
+        triggers: '',
+        duration: '',
+        notes: '',
+        category: 'other'
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error creating symptom:', err);
+      setError('Failed to create symptom');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function deleteSymptom(symptomId) {
-    setSymptoms(symptoms.filter(symptom => symptom.id !== symptomId));
+  async function deleteSymptom(symptomId) {
+    if (!window.confirm('Are you sure you want to delete this symptom?')) return;
+    
+    try {
+      await api.deleteSymptom({ id: symptomId });
+      setSymptoms(symptoms.filter(symptom => symptom.id !== symptomId));
+    } catch (err) {
+      console.error('Error deleting symptom:', err);
+      setError('Failed to delete symptom');
+    }
   }
 
   function getSeverityColor(severity) {
@@ -144,6 +169,27 @@ export default function SymptomTracker() {
 
   return (
     <div>
+      {error && (
+        <div className="card mb-6" style={{ backgroundColor: 'var(--error)', color: 'white' }}>
+          <div className="card-header">
+            <h3 className="card-title">Error</h3>
+          </div>
+          <p>{error}</p>
+          <button onClick={() => setError('')} className="secondary">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="card mb-6">
+          <div className="flex items-center justify-center" style={{ minHeight: '100px' }}>
+            <div className="loading"></div>
+            <span style={{ marginLeft: '1rem' }}>Loading symptoms...</span>
+          </div>
+        </div>
+      )}
+
       {/* Overview Cards */}
       <div className="dashboard-grid mb-6">
         <div className="dashboard-card">
@@ -253,6 +299,23 @@ export default function SymptomTracker() {
                   onChange={(e) => setNewSymptom({...newSymptom, duration: e.target.value})}
                   placeholder="e.g., 2 hours, All day"
                 />
+              </div>
+              <div>
+                <label>Category</label>
+                <select
+                  value={newSymptom.category}
+                  onChange={(e) => setNewSymptom({...newSymptom, category: e.target.value})}
+                >
+                  <option value="pain">Pain</option>
+                  <option value="energy">Energy</option>
+                  <option value="mood">Mood</option>
+                  <option value="sleep">Sleep</option>
+                  <option value="digestive">Digestive</option>
+                  <option value="respiratory">Respiratory</option>
+                  <option value="skin">Skin</option>
+                  <option value="neurological">Neurological</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>

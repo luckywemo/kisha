@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function HealthJournal() {
   const [entries, setEntries] = useState([]);
@@ -18,95 +19,122 @@ export default function HealthJournal() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState('calendar'); // calendar, list, chart
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadJournalEntries();
   }, []);
 
-  function loadJournalEntries() {
-    // In a real app, this would load from the backend
-    const mockEntries = [
-      {
-        id: 1,
-        date: '2024-01-15',
-        mood: 7,
-        energy: 6,
-        sleep: 7.5,
-        exercise: 45,
-        water: 8,
-        stress: 4,
-        notes: 'Had a great workout this morning. Feeling energized and positive.',
-        symptoms: ['Headache (mild)', 'Stiff neck'],
-        activities: ['Morning run', 'Meditation', 'Work'],
-        meals: ['Oatmeal with berries', 'Grilled chicken salad', 'Salmon with vegetables']
-      },
-      {
-        id: 2,
-        date: '2024-01-14',
-        mood: 5,
-        energy: 4,
-        sleep: 6,
-        exercise: 0,
-        water: 6,
-        stress: 7,
-        notes: 'Tough day at work. Didn\'t get enough sleep last night.',
-        symptoms: ['Fatigue', 'Anxiety'],
-        activities: ['Work', 'Netflix'],
-        meals: ['Coffee and toast', 'Fast food lunch', 'Pizza for dinner']
-      },
-      {
-        id: 3,
-        date: '2024-01-13',
-        mood: 8,
-        energy: 8,
-        sleep: 8.5,
-        exercise: 60,
-        water: 10,
-        stress: 2,
-        notes: 'Perfect day! Great sleep, good workout, and productive work day.',
-        symptoms: [],
-        activities: ['Gym workout', 'Hiking', 'Cooking'],
-        meals: ['Protein smoothie', 'Quinoa bowl', 'Grilled fish with vegetables']
-      }
-    ];
-    setEntries(mockEntries);
+  async function loadJournalEntries() {
+    try {
+      setLoading(true);
+      const response = await api.listJournalEntries();
+      setEntries(response.entries || []);
+    } catch (err) {
+      console.error('Error loading journal entries:', err);
+      setError('Failed to load journal entries');
+      // Fallback to mock data for development
+      const mockEntries = [
+        {
+          id: 1,
+          date: '2024-01-15',
+          mood: 7,
+          energy: 6,
+          sleep: 7.5,
+          exercise: 45,
+          water: 8,
+          stress: 4,
+          notes: 'Had a great workout this morning. Feeling energized and positive.',
+          symptoms: ['Headache (mild)', 'Stiff neck'],
+          activities: ['Morning run', 'Meditation', 'Work'],
+          meals: ['Oatmeal with berries', 'Grilled chicken salad', 'Salmon with vegetables']
+        },
+        {
+          id: 2,
+          date: '2024-01-14',
+          mood: 5,
+          energy: 4,
+          sleep: 6,
+          exercise: 0,
+          water: 6,
+          stress: 7,
+          notes: 'Tough day at work. Didn\'t get enough sleep last night.',
+          symptoms: ['Fatigue', 'Anxiety'],
+          activities: ['Work', 'Netflix'],
+          meals: ['Coffee and toast', 'Fast food lunch', 'Pizza for dinner']
+        },
+        {
+          id: 3,
+          date: '2024-01-13',
+          mood: 8,
+          energy: 8,
+          sleep: 8.5,
+          exercise: 60,
+          water: 10,
+          stress: 2,
+          notes: 'Perfect day! Great sleep, good workout, and productive work day.',
+          symptoms: [],
+          activities: ['Gym workout', 'Hiking', 'Cooking'],
+          meals: ['Protein smoothie', 'Quinoa bowl', 'Grilled fish with vegetables']
+        }
+      ];
+      setEntries(mockEntries);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function addEntry() {
+  async function addEntry() {
     if (!newEntry.date) return;
 
-    const entry = {
-      id: Date.now(),
-      ...newEntry,
-      createdAt: new Date().toISOString()
-    };
-
-    setEntries([entry, ...entries]);
-    setNewEntry({
-      date: new Date().toISOString().split('T')[0],
-      mood: 5,
-      energy: 5,
-      sleep: 8,
-      exercise: 0,
-      water: 8,
-      stress: 3,
-      notes: '',
-      symptoms: [],
-      activities: [],
-      meals: []
-    });
-    setShowAddForm(false);
+    try {
+      setLoading(true);
+      const response = await api.createJournalEntry(newEntry);
+      setEntries([response.entry, ...entries]);
+      setNewEntry({
+        date: new Date().toISOString().split('T')[0],
+        mood: 5,
+        energy: 5,
+        sleep: 8,
+        exercise: 0,
+        water: 8,
+        stress: 3,
+        notes: '',
+        symptoms: [],
+        activities: [],
+        meals: []
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error creating journal entry:', err);
+      setError('Failed to create journal entry');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function updateEntry(id, updates) {
-    setEntries(entries.map(entry => 
-      entry.id === id ? { ...entry, ...updates } : entry
-    ));
+  async function updateEntry(id, updates) {
+    try {
+      const response = await api.updateJournalEntry({ id, updates });
+      setEntries(entries.map(entry => 
+        entry.id === id ? response.entry : entry
+      ));
+    } catch (err) {
+      console.error('Error updating journal entry:', err);
+      setError('Failed to update journal entry');
+    }
   }
 
-  function deleteEntry(id) {
-    if (window.confirm('Are you sure you want to delete this journal entry?')) {
+  async function deleteEntry(id) {
+    if (!window.confirm('Are you sure you want to delete this journal entry?')) return;
+    
+    try {
+      await api.deleteJournalEntry({ id });
       setEntries(entries.filter(entry => entry.id !== id));
+    } catch (err) {
+      console.error('Error deleting journal entry:', err);
+      setError('Failed to delete journal entry');
     }
   }
 
@@ -165,6 +193,27 @@ export default function HealthJournal() {
 
   return (
     <div>
+      {error && (
+        <div className="card mb-6" style={{ backgroundColor: 'var(--error)', color: 'white' }}>
+          <div className="card-header">
+            <h3 className="card-title">Error</h3>
+          </div>
+          <p>{error}</p>
+          <button onClick={() => setError('')} className="secondary">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="card mb-6">
+          <div className="flex items-center justify-center" style={{ minHeight: '100px' }}>
+            <div className="loading"></div>
+            <span style={{ marginLeft: '1rem' }}>Loading journal entries...</span>
+          </div>
+        </div>
+      )}
+
       {/* Overview Stats */}
       {weeklyStats && (
         <div className="dashboard-grid mb-6">
