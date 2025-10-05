@@ -8,6 +8,10 @@ const Medication = require('./Medication');
 const HealthGoal = require('./HealthGoal');
 const Symptom = require('./Symptom');
 const JournalEntry = require('./JournalEntry');
+const Reminder = require('./Reminder');
+const HealthChallenge = require('./HealthChallenge');
+const UserChallenge = require('./UserChallenge');
+const WellnessTip = require('./WellnessTip');
 
 // Associations
 User.hasMany(Conversation, { foreignKey: 'userId' });
@@ -34,6 +38,21 @@ Symptom.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(JournalEntry, { foreignKey: 'userId' });
 JournalEntry.belongsTo(User, { foreignKey: 'userId' });
 
+User.hasMany(Reminder, { foreignKey: 'userId' });
+Reminder.belongsTo(User, { foreignKey: 'userId' });
+
+User.hasMany(UserChallenge, { foreignKey: 'userId' });
+UserChallenge.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+HealthChallenge.hasMany(UserChallenge, { foreignKey: 'challengeId' });
+UserChallenge.belongsTo(HealthChallenge, { foreignKey: 'challengeId', as: 'challenge' });
+
+User.hasMany(HealthChallenge, { foreignKey: 'createdBy' });
+HealthChallenge.belongsTo(User, { foreignKey: 'createdBy' });
+
+User.hasMany(WellnessTip, { foreignKey: 'createdBy' });
+WellnessTip.belongsTo(User, { foreignKey: 'createdBy' });
+
 module.exports = {
   sequelize,
   User,
@@ -45,6 +64,10 @@ module.exports = {
   HealthGoal,
   Symptom,
   JournalEntry,
+  Reminder,
+  HealthChallenge,
+  UserChallenge,
+  WellnessTip,
 };
 
 

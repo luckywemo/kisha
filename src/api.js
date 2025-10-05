@@ -114,6 +114,102 @@ export const api = {
   },
   async deleteJournalEntry({ id }) {
     return request(`/journal/${id}`, { method: 'DELETE' });
+  },
+  // Reminders
+  async listReminders() {
+    return request('/reminders');
+  },
+  async createReminder({ title, description, type, time, frequency, isActive = true }) {
+    return request('/reminders', { method: 'POST', body: { title, description, type, time, frequency, isActive } });
+  },
+  async updateReminder({ id, updates }) {
+    return request(`/reminders/${id}`, { method: 'PUT', body: updates });
+  },
+  async deleteReminder({ id }) {
+    return request(`/reminders/${id}`, { method: 'DELETE' });
+  },
+  async completeReminder({ id, notes }) {
+    return request(`/reminders/${id}/complete`, { method: 'POST', body: { notes } });
+  },
+  async toggleReminder({ id }) {
+    return request(`/reminders/${id}/toggle`, { method: 'POST' });
+  },
+  async getReminderStats() {
+    return request('/reminders/stats');
+  },
+  // Reports
+  async generateReport({ type, startDate, endDate }) {
+    return request(`/reports/${type}`, { method: 'POST', body: { startDate, endDate } });
+  },
+  async generateComprehensiveReport({ startDate, endDate }) {
+    return request('/reports/comprehensive', { method: 'POST', body: { startDate, endDate } });
+  },
+  async generateWeeklyReport({ endDate }) {
+    return request('/reports/weekly', { method: 'POST', body: { endDate } });
+  },
+  async generateMonthlyReport({ endDate }) {
+    return request('/reports/monthly', { method: 'POST', body: { endDate } });
+  },
+  async generateSleepReport({ endDate }) {
+    return request('/reports/sleep', { method: 'POST', body: { endDate } });
+  },
+  // Export
+  async exportData({ format, categories, startDate, endDate }) {
+    return request(`/export/${format}`, { method: 'POST', body: { categories, startDate, endDate } });
+  },
+  async getExportCategories() {
+    return request('/export/categories');
+  },
+  async getPdfData({ startDate, endDate }) {
+    return request('/export/pdf-data', { method: 'POST', body: { startDate, endDate } });
+  },
+  // Challenges
+  async listChallenges() {
+    return request('/challenges');
+  },
+  async getMyChallenges() {
+    return request('/challenges/my-challenges');
+  },
+  async joinChallenge({ id }) {
+    return request(`/challenges/${id}/join`, { method: 'POST' });
+  },
+  async updateChallengeProgress({ id, progress, notes }) {
+    return request(`/challenges/${id}/progress`, { method: 'PUT', body: { progress, notes } });
+  },
+  async leaveChallenge({ id }) {
+    return request(`/challenges/${id}/leave`, { method: 'DELETE' });
+  },
+  async getChallengeLeaderboard({ id, limit = 10 }) {
+    return request(`/challenges/${id}/leaderboard?limit=${limit}`);
+  },
+  async getAchievements() {
+    return request('/challenges/achievements');
+  },
+  async getChallengeStats() {
+    return request('/challenges/stats');
+  },
+  async getChallengeCategories() {
+    return request('/challenges/categories');
+  },
+  // Wellness Tips
+  async getWellnessTips({ category, limit = 20, offset = 0 } = {}) {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (limit) params.append('limit', limit);
+    if (offset) params.append('offset', offset);
+    return request(`/wellness?${params.toString()}`);
+  },
+  async getWellnessCategories() {
+    return request('/wellness/categories');
+  },
+  async getPersonalizedRecommendations() {
+    return request('/wellness/recommendations');
+  },
+  async getDailyTip() {
+    return request('/wellness/daily/tip');
+  },
+  async getWellnessTip({ id }) {
+    return request(`/wellness/${id}`);
   }
 };
 

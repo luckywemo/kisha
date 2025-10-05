@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const { errorHandler, notFoundHandler, requestId, errorLogger } = require('./middleware/errorHandler');
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +21,9 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').spl
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(helmet());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(requestId);
 
 // Routes
 app.get('/', (req, res) => {
@@ -46,20 +48,18 @@ app.use('/api/medications', require('./routes/medications'));
 app.use('/api/goals', require('./routes/goals'));
 app.use('/api/symptoms', require('./routes/symptoms'));
 app.use('/api/journal', require('./routes/journal'));
+app.use('/api/reminders', require('./routes/reminders'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/export', require('./routes/export'));
+app.use('/api/challenges', require('./routes/challenges'));
+app.use('/api/wellness', require('./routes/wellness'));
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
+app.use(errorLogger);
+app.use(errorHandler);
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+app.use(notFoundHandler);
 
 app.listen(PORT, async () => {
   console.log(`🚀 Khisha API server running on port ${PORT}`);
