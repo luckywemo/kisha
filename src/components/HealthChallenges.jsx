@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function HealthChallenges() {
   const [challenges, setChallenges] = useState([]);
@@ -17,8 +18,27 @@ export default function HealthChallenges() {
     loadAchievements();
   }, []);
 
-  function loadChallenges() {
-    const mockChallenges = [
+  async function loadChallenges() {
+    try {
+      const serverChallenges = await api.listChallenges();
+      const normalized = serverChallenges.map(c => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        category: c.category,
+        difficulty: c.points >= 300 ? 'hard' : c.points >= 180 ? 'medium' : 'easy',
+        duration: c.duration,
+        points: c.points,
+        requirements: Array.isArray(c.requirements) ? c.requirements : (c.requirements || []),
+        rewards: ['Challenge Points', 'Achievement Progress'],
+        isActive: c.isActive,
+        participants: 0,
+        startDate: null,
+        endDate: null
+      }));
+      setChallenges(normalized);
+    } catch (_) {
+      const mockChallenges = [
       {
         id: 1,
         title: '7-Day Hydration Challenge',
@@ -127,8 +147,9 @@ export default function HealthChallenges() {
         startDate: '2024-01-20',
         endDate: '2024-01-22'
       }
-    ];
-    setChallenges(mockChallenges);
+      ];
+      setChallenges(mockChallenges);
+    }
   }
 
   function loadAchievements() {
@@ -191,7 +212,12 @@ export default function HealthChallenges() {
     setAchievements(mockAchievements);
   }
 
-  function joinChallenge(challengeId) {
+  async function joinChallenge(challengeId) {
+    try {
+      await api.joinChallenge({ id: challengeId });
+    } catch (_) {
+      // ignore join errors for now
+    }
     setUserProgress(prev => ({
       ...prev,
       [challengeId]: {

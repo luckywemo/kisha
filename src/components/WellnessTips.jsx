@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function WellnessTips() {
   const [tips, setTips] = useState([]);
   const [filteredTips, setFilteredTips] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState([
+    { value: 'all', label: 'All Tips', icon: '💡' }
+  ]);
+  const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState({
     age: 30,
     activityLevel: 'moderate',
@@ -12,11 +17,45 @@ export default function WellnessTips() {
   });
 
   useEffect(() => {
+    loadCategories();
     loadWellnessTips();
   }, []);
 
-  function loadWellnessTips() {
-    const mockTips = [
+  async function loadCategories() {
+    try {
+      const res = await api.getWellnessCategories();
+      const mapped = [{ value: 'all', label: 'All Tips', icon: '💡' }].concat(
+        res.map(c => ({ value: c.id, label: c.name, icon: c.icon }))
+      );
+      setCategories(mapped);
+    } catch (_) {
+      // ignore, fallback to defaults
+    }
+  }
+
+  async function loadWellnessTips(category = 'all') {
+    setLoading(true);
+    try {
+      const params = {};
+      if (category && category !== 'all') params.category = category;
+      const serverTips = await api.getWellnessTips(params);
+      const normalized = serverTips.map(t => ({
+        id: t.id,
+        title: t.title,
+        category: t.category,
+        difficulty: t.difficulty || 'beginner',
+        duration: t.estimatedTime || '5 minutes',
+        description: t.content?.slice(0, 140) || '',
+        content: t.content || '',
+        benefits: Array.isArray(t.benefits) ? t.benefits : [],
+        steps: Array.isArray(t.instructions) ? t.instructions : [],
+        tags: Array.isArray(t.tags) ? t.tags : [],
+        isPersonalized: t.isPersonalized || false
+      }));
+      setTips(normalized);
+      setFilteredTips(normalized);
+    } catch (_) {
+      const mockTips = [
       {
         id: 1,
         title: 'Morning Hydration Routine',
@@ -170,17 +209,16 @@ export default function WellnessTips() {
         isPersonalized: true
       }
     ];
-    setTips(mockTips);
-    setFilteredTips(mockTips);
+      setTips(mockTips);
+      setFilteredTips(mockTips);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function filterTips(category) {
+  async function filterTips(category) {
     setSelectedCategory(category);
-    if (category === 'all') {
-      setFilteredTips(tips);
-    } else {
-      setFilteredTips(tips.filter(tip => tip.category === category));
-    }
+    await loadWellnessTips(category);
   }
 
   function getDifficultyColor(difficulty) {
@@ -203,13 +241,7 @@ export default function WellnessTips() {
     return icons[category] || '💡';
   }
 
-  const categories = [
-    { value: 'all', label: 'All Tips', icon: '💡' },
-    { value: 'nutrition', label: 'Nutrition', icon: '🥗' },
-    { value: 'exercise', label: 'Exercise', icon: '🏃‍♂️' },
-    { value: 'sleep', label: 'Sleep', icon: '😴' },
-    { value: 'mental-health', label: 'Mental Health', icon: '🧘‍♀️' }
-  ];
+  
 
   return (
     <div>
