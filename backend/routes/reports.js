@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { 
-  AssessmentResult, 
+  AssessmentSubmission, 
   HealthGoal, 
   Symptom, 
   Medication, 
@@ -31,7 +31,7 @@ router.post('/comprehensive', auth, async (req, res) => {
       journalEntries,
       reminders
     ] = await Promise.all([
-      AssessmentResult.findAll({
+      AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.between]: [start, end] }
@@ -116,7 +116,7 @@ router.post('/weekly', auth, async (req, res) => {
       journalEntries,
       symptoms
     ] = await Promise.all([
-      AssessmentResult.findAll({
+      AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.between]: [startDate, endDate] }
@@ -179,7 +179,7 @@ router.post('/monthly', auth, async (req, res) => {
       symptoms,
       goals
     ] = await Promise.all([
-      AssessmentResult.findAll({
+      AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.between]: [startDate, endDate] }

@@ -1,4 +1,5 @@
 const express = require('express');
+const { sequelize } = require('../db/config');
 const { WellnessTip, User } = require('../models');
 const auth = require('../middleware/auth');
 
@@ -163,7 +164,7 @@ async function getUserHealthData(userId) {
   try {
     const { 
       JournalEntry, 
-      AssessmentResult, 
+      AssessmentSubmission, 
       Symptom, 
       HealthGoal,
       Reminder 
@@ -189,7 +190,7 @@ async function getUserHealthData(userId) {
         order: [['date', 'DESC']],
         limit: 30
       }),
-      AssessmentResult.findAll({
+      AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.gte]: thirtyDaysAgo }

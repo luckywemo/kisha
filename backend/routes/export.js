@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { 
-  AssessmentResult, 
+  AssessmentSubmission, 
   HealthGoal, 
   Symptom, 
   Medication, 
@@ -36,12 +36,13 @@ router.post('/json', auth, async (req, res) => {
     
     // Export assessments
     if (!categories || categories.includes('assessments')) {
-      const assessments = await AssessmentResult.findAll({
+      const assessments = await AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.between]: [start, end] }
         },
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        include: [{ model: require('../models/AssessmentForm'), attributes: ['title'] }]
       });
       exportData.assessments = assessments;
     }
@@ -142,12 +143,13 @@ router.post('/csv', auth, async (req, res) => {
     
     // Export assessments as CSV
     if (!categories || categories.includes('assessments')) {
-      const assessments = await AssessmentResult.findAll({
+      const assessments = await AssessmentSubmission.findAll({
         where: { 
           userId,
           createdAt: { [Op.between]: [start, end] }
         },
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        include: [{ model: require('../models/AssessmentForm'), attributes: ['title'] }]
       });
       
       if (assessments.length > 0) {
@@ -156,7 +158,8 @@ router.post('/csv', auth, async (req, res) => {
         
         assessments.forEach(assessment => {
           const responses = JSON.stringify(assessment.responses || {});
-          csvData += `${assessment.createdAt.toISOString().split('T')[0]},${assessment.formTitle || 'Unknown'},${assessment.score || 0},"${responses.replace(/"/g, '""')}"\n`;
+          const formTitle = assessment.AssessmentForm ? assessment.AssessmentForm.title : 'Unknown';
+          csvData += `${assessment.createdAt.toISOString().split('T')[0]},${formTitle},${assessment.score || 0},"${responses.replace(/"/g, '""')}"\n`;
         });
         csvData += '\n';
       }
