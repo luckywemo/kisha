@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../api'
 
 export default function ReminderSystem() {
   const [reminders, setReminders] = useState([]);
@@ -18,65 +19,13 @@ export default function ReminderSystem() {
     requestNotificationPermission();
   }, []);
 
-  function loadReminders() {
-    const mockReminders = [
-      {
-        id: 1,
-        title: 'Take Vitamin D',
-        description: 'Take 1000 IU Vitamin D supplement',
-        type: 'medication',
-        time: '08:00',
-        frequency: 'daily',
-        isActive: true,
-        lastTriggered: '2024-01-15T08:00:00Z',
-        nextTrigger: '2024-01-16T08:00:00Z'
-      },
-      {
-        id: 2,
-        title: 'Drink Water',
-        description: 'Drink a glass of water',
-        type: 'hydration',
-        time: '10:00',
-        frequency: 'daily',
-        isActive: true,
-        lastTriggered: '2024-01-15T10:00:00Z',
-        nextTrigger: '2024-01-16T10:00:00Z'
-      },
-      {
-        id: 3,
-        title: 'Exercise',
-        description: '30 minutes of physical activity',
-        type: 'exercise',
-        time: '18:00',
-        frequency: 'daily',
-        isActive: true,
-        lastTriggered: '2024-01-14T18:00:00Z',
-        nextTrigger: '2024-01-15T18:00:00Z'
-      },
-      {
-        id: 4,
-        title: 'Health Assessment',
-        description: 'Complete weekly wellness check',
-        type: 'assessment',
-        time: '09:00',
-        frequency: 'weekly',
-        isActive: true,
-        lastTriggered: '2024-01-08T09:00:00Z',
-        nextTrigger: '2024-01-15T09:00:00Z'
-      },
-      {
-        id: 5,
-        title: 'Meditation',
-        description: '10 minutes of mindfulness practice',
-        type: 'mental-health',
-        time: '19:00',
-        frequency: 'daily',
-        isActive: false,
-        lastTriggered: '2024-01-10T19:00:00Z',
-        nextTrigger: null
-      }
-    ];
-    setReminders(mockReminders);
+  async function loadReminders() {
+    try {
+      const res = await api.listReminders();
+      setReminders(res);
+    } catch (_) {
+      setReminders([]);
+    }
   }
 
   async function requestNotificationPermission() {
@@ -88,30 +37,27 @@ export default function ReminderSystem() {
     }
   }
 
-  function addReminder() {
+  async function addReminder() {
     if (!newReminder.title || !newReminder.time) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const reminder = {
-      id: Date.now(),
-      ...newReminder,
-      createdAt: new Date().toISOString(),
-      lastTriggered: null,
-      nextTrigger: calculateNextTrigger(newReminder.time, newReminder.frequency)
-    };
-
-    setReminders([reminder, ...reminders]);
-    setNewReminder({
-      title: '',
-      description: '',
-      type: 'medication',
-      time: '',
-      frequency: 'daily',
-      isActive: true
-    });
-    setShowAddForm(false);
+    try {
+      const created = await api.createReminder(newReminder);
+      setReminders([created, ...reminders]);
+      setNewReminder({
+        title: '',
+        description: '',
+        type: 'medication',
+        time: '',
+        frequency: 'daily',
+        isActive: true
+      });
+      setShowAddForm(false);
+    } catch (e) {
+      alert(e.message || 'Failed to create reminder');
+    }
   }
 
   function calculateNextTrigger(time, frequency) {
@@ -133,35 +79,43 @@ export default function ReminderSystem() {
     return nextTrigger.toISOString();
   }
 
-  function toggleReminder(id) {
-    setReminders(reminders.map(reminder => 
-      reminder.id === id 
-        ? { 
-            ...reminder, 
-            isActive: !reminder.isActive,
-            nextTrigger: !reminder.isActive ? calculateNextTrigger(reminder.time, reminder.frequency) : null
-          }
-        : reminder
-    ));
-  }
-
-  function deleteReminder(id) {
-    if (window.confirm('Are you sure you want to delete this reminder?')) {
-      setReminders(reminders.filter(reminder => reminder.id !== id));
+  async function toggleReminder(id) {
+    try {
+      const toggled = await api.toggleReminder({ id });
+      setReminders(reminders.map(r => r.id === id ? toggled : r));
+    } catch (e) {
+      alert(e.message || 'Failed to toggle reminder');
     }
   }
 
-  function markAsCompleted(id) {
+  async function deleteReminder(id) {
+    if (window.confirm('Are you sure you want to delete this reminder?')) {
+      try {
+        await api.deleteReminder({ id });
+        setReminders(reminders.filter(reminder => reminder.id !== id));
+      } catch (e) {
+        alert(e.message || 'Failed to delete reminder');
+      }
+    }
+  }
+
+  async function markAsCompleted(id) {
     const now = new Date().toISOString();
-    setReminders(reminders.map(reminder => 
-      reminder.id === id 
-        ? { 
-            ...reminder, 
-            lastTriggered: now,
-            nextTrigger: calculateNextTrigger(reminder.time, reminder.frequency)
-          }
-        : reminder
-    ));
+    try {
+      const updated = await api.completeReminder({ id, notes: '' });
+      setReminders(reminders.map(r => r.id === id ? updated : r));
+    } catch (e) {
+      // fallback locally if API fails
+      setReminders(reminders.map(reminder => 
+        reminder.id === id 
+          ? { 
+              ...reminder, 
+              lastTriggered: now,
+              nextTrigger: calculateNextTrigger(reminder.time, reminder.frequency)
+            }
+          : reminder
+      ));
+    }
 
     // Show notification
     if ('Notification' in window && Notification.permission === 'granted') {
