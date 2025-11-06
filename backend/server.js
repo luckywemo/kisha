@@ -10,7 +10,7 @@ dotenv.config();
 
 // Import database and models after dotenv
 const { sequelize, testConnection } = require('./db/config');
-const { AssessmentForm } = require('./models');
+const { AssessmentForm, HealthChallenge, WellnessTip, User } = require('./models');
 require('./models');
 
 const app = express();
@@ -129,6 +129,109 @@ app.listen(PORT, async () => {
       await AssessmentForm.create(form);
     }
     console.log(`🌱 Seeded ${sampleForms.length} sample assessment forms`);
+  }
+
+  // Seed a default user as creator for challenges/tips if needed
+  let systemUser = await User.findOne({ where: { email: 'system@example.com' } });
+  if (!systemUser) {
+    systemUser = await User.create({ name: 'System', email: 'system@example.com', password: 'temporary' });
+  }
+
+  // Seed sample health challenges if none exist
+  const challengeCount = await HealthChallenge.count();
+  if (challengeCount === 0) {
+    const sampleChallenges = [
+      {
+        title: '7-Day Hydration Boost',
+        description: 'Drink at least 8 glasses of water daily for a week.',
+        category: 'hydration',
+        targetValue: 7,
+        unit: 'days',
+        duration: 7,
+        points: 150,
+        requirements: ['Log water intake daily'],
+        tips: ['Carry a bottle', 'Set hourly reminders'],
+        createdBy: systemUser.id,
+        isActive: true
+      },
+      {
+        title: 'Daily Step-Up',
+        description: 'Walk 8,000 steps every day for 10 days.',
+        category: 'fitness',
+        targetValue: 10,
+        unit: 'days',
+        duration: 10,
+        points: 200,
+        requirements: ['Sync steps or log manually'],
+        tips: ['Take stairs', 'Short walking breaks'],
+        createdBy: systemUser.id,
+        isActive: true
+      },
+      {
+        title: 'Better Sleep Week',
+        description: 'Get 7+ hours of sleep for 5 days in a week.',
+        category: 'sleep',
+        targetValue: 5,
+        unit: 'days',
+        duration: 7,
+        points: 180,
+        requirements: ['Log sleep daily'],
+        tips: ['No screens 1h before bed', 'Consistent bedtime'],
+        createdBy: systemUser.id,
+        isActive: true
+      }
+    ];
+    for (const ch of sampleChallenges) {
+      await HealthChallenge.create(ch);
+    }
+    console.log(`🌱 Seeded ${sampleChallenges.length} sample health challenges`);
+  }
+
+  // Seed sample wellness tips if none exist
+  const tipsCount = await WellnessTip.count();
+  if (tipsCount === 0) {
+    const sampleTips = [
+      {
+        title: 'Hydration Habit',
+        content: 'Start your morning with a full glass of water to kickstart hydration.',
+        category: 'hydration',
+        tags: ['morning', 'routine'],
+        difficulty: 'beginner',
+        estimatedTime: '1 minute',
+        benefits: ['Improved energy', 'Better focus'],
+        instructions: ['Keep water by bedside', 'Drink upon waking'],
+        createdBy: systemUser.id,
+        isActive: true
+      },
+      {
+        title: 'Wind-Down Routine',
+        content: 'Dim lights and read for 15 minutes to signal your body to sleep.',
+        category: 'sleep',
+        tags: ['evening', 'routine'],
+        difficulty: 'beginner',
+        estimatedTime: '15 minutes',
+        benefits: ['Faster sleep onset', 'Improved sleep quality'],
+        instructions: ['Avoid screens', 'Set a consistent time'],
+        createdBy: systemUser.id,
+        isActive: true
+      },
+      {
+        title: 'Box Breathing',
+        content: 'Inhale 4s, hold 4s, exhale 4s, hold 4s. Repeat 4 times.',
+        category: 'stress-management',
+        tags: ['breathing', 'relaxation'],
+        difficulty: 'beginner',
+        estimatedTime: '2 minutes',
+        benefits: ['Lower stress', 'Calmer mood'],
+        instructions: ['Sit upright', 'Close eyes', 'Follow the counts'],
+        createdBy: systemUser.id,
+        isActive: true
+      }
+    ];
+    for (const tip of sampleTips) {
+      await WellnessTip.create(tip);
+    }
+    console.log(`🌱 Seeded ${sampleTips.length} wellness tips`);
   }
   console.log('🗄️  Database synchronized');
 });
