@@ -6,6 +6,8 @@ export default function HealthChallenges() {
   const [userProgress, setUserProgress] = useState({});
   const [achievements, setAchievements] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [userStats, setUserStats] = useState({
     totalPoints: 1250,
     level: 5,
@@ -15,6 +17,7 @@ export default function HealthChallenges() {
 
   useEffect(() => {
     loadChallenges();
+    loadMyChallenges();
     loadAchievements();
   }, []);
 
@@ -152,7 +155,44 @@ export default function HealthChallenges() {
     }
   }
 
-  function loadAchievements() {
+  async function loadMyChallenges() {
+    try {
+      const mine = await api.getMyChallenges();
+      const mapped = {};
+      mine.forEach(uc => {
+        mapped[uc.challengeId || uc.challenge?.id || uc.id] = {
+          joinedAt: uc.startDate || uc.createdAt,
+          progress: uc.progress || 0,
+          completed: uc.status === 'completed'
+        };
+      });
+      setUserProgress(mapped);
+    } catch (_) {}
+  }
+
+  async function loadAchievements() {
+    try {
+      const res = await api.getAchievements();
+      if (res?.achievements) {
+        setAchievements(res.achievements.map((a, idx) => ({
+          id: a.id || idx,
+          title: a.title,
+          description: a.description,
+          icon: a.icon || '🏆',
+          points: a.points || 100,
+          unlockedAt: a.unlockedAt,
+          rarity: a.unlocked ? 'common' : 'uncommon'
+        })));
+        if (res.stats) {
+          setUserStats(prev => ({
+            ...prev,
+            completedChallenges: res.stats.completedChallenges || prev.completedChallenges,
+            totalPoints: res.stats.totalPoints || prev.totalPoints
+          }));
+        }
+        return;
+      }
+    } catch (_) {}
     const mockAchievements = [
       {
         id: 1,
@@ -215,6 +255,7 @@ export default function HealthChallenges() {
   async function joinChallenge(challengeId) {
     try {
       await api.joinChallenge({ id: challengeId });
+      await loadMyChallenges();
     } catch (_) {
       // ignore join errors for now
     }
@@ -228,14 +269,54 @@ export default function HealthChallenges() {
     }));
   }
 
-  function updateChallengeProgress(challengeId, progress) {
-    setUserProgress(prev => ({
-      ...prev,
-      [challengeId]: {
-        ...prev[challengeId],
-        progress: Math.min(progress, 100)
-      }
-    }));
+  async function leaveChallenge(challengeId) {
+    try {
+      await api.leaveChallenge({ id: challengeId });
+      const copy = { ...userProgress };
+      delete copy[challengeId];
+      setUserProgress(copy);
+    } catch (e) {
+      alert(e.message || 'Failed to leave challenge');
+    }
+  }
+
+  async function updateProgress(challengeId) {
+    const current = userProgress[challengeId]?.progress || 0;
+    const input = window.prompt('Update progress (number):', String(current));
+    if (input == null) return;
+    const value = Number(input);
+    if (Number.isNaN(value)) {
+      alert('Please enter a valid number.');
+      return;
+    }
+    try {
+      const updated = await api.updateChallengeProgress({ id: challengeId, progress: value });
+      setUserProgress(prev => ({
+        ...prev,
+        [challengeId]: {
+          joinedAt: updated.startDate || updated.createdAt || prev[challengeId]?.joinedAt || new Date().toISOString(),
+          progress: updated.progress || value,
+          completed: updated.status === 'completed'
+        }
+      }));
+    } catch (e) {
+      setUserProgress(prev => ({
+        ...prev,
+        [challengeId]: { ...prev[challengeId], progress: value }
+      }));
+    }
+  }
+
+  async function loadLeaderboard(challengeId) {
+    setLoading(true);
+    try {
+      const board = await api.getChallengeLeaderboard({ id: challengeId, limit: 10 });
+      setLeaderboard({ challengeId, entries: board });
+    } catch (_) {
+      setLeaderboard({ challengeId, entries: [] });
+    } finally {
+      setLoading(false);
+    }
   }
 
   function getDifficultyColor(difficulty) {
@@ -399,21 +480,39 @@ export default function HealthChallenges() {
                 </div>
 
                 {userChallenge ? (
-                  <button 
-                    className="secondary"
-                    style={{ width: '100%', fontSize: '0.875rem' }}
-                    onClick={() => setSelectedChallenge(challenge)}
-                  >
-                    View Details
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      className="secondary"
+                      style={{ width: '100%', fontSize: '0.875rem' }}
+                      onClick={() => updateProgress(challenge.id)}
+                    >
+                      Update Progress
+                    </button>
+                    <button 
+                      className="secondary"
+                      style={{ width: '100%', fontSize: '0.875rem' }}
+                      onClick={() => leaveChallenge(challenge.id)}
+                    >
+                      Leave
+                    </button>
+                  </div>
                 ) : (
-                  <button 
-                    className="primary"
-                    style={{ width: '100%', fontSize: '0.875rem' }}
-                    onClick={() => joinChallenge(challenge.id)}
-                  >
-                    Join Challenge
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      className="primary"
+                      style={{ width: '100%', fontSize: '0.875rem' }}
+                      onClick={() => joinChallenge(challenge.id)}
+                    >
+                      Join Challenge
+                    </button>
+                    <button 
+                      className="secondary"
+                      style={{ width: '100%', fontSize: '0.875rem' }}
+                      onClick={() => loadLeaderboard(challenge.id)}
+                    >
+                      Leaderboard
+                    </button>
+                  </div>
                 )}
               </div>
             );
@@ -468,13 +567,22 @@ export default function HealthChallenges() {
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Joined {new Date(userChallenge.joinedAt).toLocaleDateString()}
                     </span>
-                    <button 
-                      className="primary"
-                      style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      onClick={() => setSelectedChallenge(challenge)}
-                    >
-                      Update Progress
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        className="primary"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                        onClick={() => updateProgress(challenge.id)}
+                      >
+                        Update Progress
+                      </button>
+                      <button 
+                        className="secondary"
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                        onClick={() => loadLeaderboard(challenge.id)}
+                      >
+                        Leaderboard
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -607,6 +715,61 @@ export default function HealthChallenges() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {leaderboard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card" style={{ maxWidth: '520px', width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="card-header">
+              <h2 className="card-title">Leaderboard</h2>
+              <button 
+                onClick={() => setLeaderboard(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              {loading ? (
+                <div className="flex items-center justify-center"><span className="loading"></span></div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {leaderboard.entries.length === 0 && (
+                    <div className="text-muted">No entries yet.</div>
+                  )}
+                  {leaderboard.entries.map((entry, idx) => (
+                    <div key={entry.id || idx} className="card" style={{ padding: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ fontWeight: 700 }}># {idx + 1}</div>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>
+                              {(entry.user?.firstName && entry.user?.lastName)
+                                ? `${entry.user.firstName} ${entry.user.lastName}`
+                                : (entry.user?.username || 'User')}
+                            </div>
+                            <div className="text-muted" style={{ fontSize: '0.75rem' }}>Progress: {entry.progress || 0}</div>
+                          </div>
+                        </div>
+                        <div className="badge primary">{entry.progress || 0}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
