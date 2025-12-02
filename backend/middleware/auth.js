@@ -1,27 +1,29 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import logger from '../services/logger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
-
-module.exports = async function authMiddleware(req, res, next) {
+/**
+ * Middleware to authenticate JWT tokens
+ */
+export const authenticateToken = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
     if (!token) {
-      return res.status(401).json({ error: 'Missing authorization token' });
+      return res.status(401).json({ error: 'Authentication token required' });
     }
 
-    const payload = jwt.verify(token, JWT_SECRET);
-    const user = await User.findByPk(payload.id, { attributes: ['id', 'email', 'name'] });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) {
+        logger.error('Token verification failed:', err);
+        return res.status(403).json({ error: 'Invalid or expired token' });
+      }
 
-    req.user = user;
-    next();
+      req.user = user;
+      next();
+    });
   } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    logger.error('Authentication error:', error);
+    return res.status(500).json({ error: 'Authentication failed' });
   }
-}
-
-
+}; 
